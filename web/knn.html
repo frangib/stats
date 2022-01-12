@@ -1,7 +1,7 @@
 <html>
 
 <head>
-    <title> KNN
+    <title> KNN K = 1
     </title>
     <meta charset="UTF-8">
 </head>
@@ -13,8 +13,8 @@
 </style>
 
 <body>
-    <h1> KNN </h1>
-    <input id="kValue" type="number" min="1" value="2">
+    <h1> KNN K = 1</h1>
+    <input id="kValue" type="number" min="1" value="2" hidden>
     <br>
     <div id="radioGroup">
         <input type="radio" id="class0" name="class" value="A">
@@ -29,6 +29,7 @@
     <br>
     <button onclick="prepare4KNN()">Train</button>
     <div id="dm" style="font-family: 'Courier New', Courier, monospace;">
+        <h3>Distance matrix</h3>
         <table id="dmColourMap">
 
         </table>
@@ -65,11 +66,12 @@
 
         function createClickableSurface() {
 
-            let WIDTH = window.innerWidth;
-            let HEIGHT = window.innerHeight
+            let WIDTH = window.innerWidth/5;
+            let HEIGHT = window.innerHeight/5;
             let table = document.getElementById("space");
             table.style.width = WIDTH / N;
             table.style.height = HEIGHT / N;
+            table.style.textAlign="center";
 
             for (let i = 0; i < N; i++) {
                 let row = document.createElement("TR");
@@ -206,12 +208,7 @@
             // Set an event lsitener to each cell to call predict():
             for (let i = 0; i < N; i++) {
                 for (let j = 0; j < N; j++) {
-                    let id = i + "_" + j;
-                    let cell = document.getElementById(id);
-
-                    cell.addEventListener('mouseover', function () {
-                        predict(i, j, k);
-                    });
+                    predict(i, j, k);
                 }
             }
 
@@ -219,32 +216,29 @@
             distMatrix = distMatrix.slice(0, numTrainPoints);
             distMatrix = distMatrix.map(row => row.slice(0, numTrainPoints));
         }
-
+        let results = [];
         function predict(x, y, kVal) {
-            
-            /*
-            -Calcula la distancia a cada punto O(N).
-            -Quedate con los k índices de las k distancias más pequeñas.
-            -Usa pointClass para ver el tipo de cada indice y estimar la
-            P(Y = j | X = x_o).
-            -Resultado: la clase con mayor ratio.
-            */
+            let cellid = x + "_" + y;
+            let cell = document.getElementById(cellid);
             let dists = [];
             let indxs = [];
             let currPoint = {};
+            let ind = 0;
+            let col = "";
             currPoint.x = x;
             currPoint.y = y;
             currPoint.type = "unknown";
+            // Compute the distance from the test point to all the training
+            // points:
             for (let i = 0; i < numTrainPoints; i++) {
                 dists.push(distAB(points[i], currPoint));
                 indxs.push(i);
-
             }
-            let min = Math.min(...dists);
-            let ind = dists.indexOf(min);
-            let cellid = x + "_" + y;
-            let col = COLOURS[points[ind].type];
-            let cell = document.getElementById(cellid);
+
+            min = Math.min(...dists);
+            ind = dists.indexOf(min);
+            cellid = x + "_" + y;
+            col = COLOURS[points[ind].type];
             cell.style.color = col;
             cell.innerHTML = "\u2022";
         }
