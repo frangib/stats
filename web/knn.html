@@ -39,6 +39,7 @@
 
     <script>
         const MAX_NUM_POINTS = 100;
+        const N = 100; // Size of the side of the clickable surface.
         const COLOURS = {
             "A": "#FF0000",
             "B": "#00FF00",
@@ -62,125 +63,8 @@
 
         createClickableSurface();
 
-        function addPoint(x, y, type) {
-            let p = {};
-            p.id = points.length;
-            p.x = x;
-            p.y = y;
-            p.type = type;
-            points.push(p);
-            pointClass.set(x + "_" + y, type);
-            numTrainPoints++;
-            updateDistMatrix(p);
-        }
-
-        function distAB(p1, p2) {
-            let dist = Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
-            return dist;
-        }
-
-        function updateDistMatrix(point) {
-            for (let i = 0; i < points.length - 1; i++) {
-                let d = distAB(points[i], point);
-                if (d > maxDist) {
-                    maxDist = d;
-                }
-                distMatrix[i][points.length - 1] = d;
-            }
-            displayDistMatrix();
-        }
-
-        function mirrorDistMatrix() {
-            for (let i = 1; i < numTrainPoints; i++) {
-                for (let j = 0; j < i; j++) {
-                    distMatrix[i][j] = distMatrix[j][i];
-                }
-            }
-        }
-
-        function GreenYellowRed(number) {
-            number = (number / maxDist) * 100; // working with 0-99 will be easier
-            if (number == 0) {
-                return "rgb(255,255,255);"
-            } else {
-                let r = 0;
-                let g = 0;
-                if (number < 50) {
-                    // green to yellow
-                    r = Math.floor(255 * (number / 50));
-                    g = 255;
-
-                } else {
-                    // yellow to red
-                    r = 255;
-                    g = Math.floor(255 * ((50 - number % 50) / 50));
-                }
-                b = 0;
-
-                return "rgb(" + r + "," + g + "," + b + ")";
-            }
-
-        }
-
-        function displayDistMatrix() {
-            // Debug print of the distance matrix:
-            const CELL_WIDTH = 5;
-
-            let dm = document.getElementById("dmColourMap");
-            let table = document.createElement("TR");
-
-            dm.innerHTML = "";
-
-            for (let i = 0; i < numTrainPoints; i++) {
-                let row = document.createElement("TR");
-                for (let j = 0; j < numTrainPoints; j++) {
-                    let cell = document.createElement("TD");
-                    let div = document.createElement("div");
-                    div.setAttribute("id", "cm" + i + "_" + j);
-                    div.style.width = CELL_WIDTH;
-                    div.style.height = CELL_WIDTH;
-                    cell.style.backgroundColor = GreenYellowRed(distMatrix[i][j]);
-                    cell.appendChild(div);
-                    row.appendChild(cell);
-                }
-                table.appendChild(row);
-            }
-            dm.appendChild(table);
-        }
-
-        function prepare4KNN() {
-            // Disable or hide inputs:
-            let kInput = document.getElementById("kValue");
-            document.getElementById("radioGroup").hidden = true;
-            k = kInput.value;
-            kInput.disabled = true;
-
-            // Mirror the distance matrix:
-            mirrorDistMatrix();
-            displayDistMatrix();
-
-            // Set an event lsitener to each cell to call predict():
-            for (let i = 0; i < numTrainPoints; i++) {
-                for (let j = 0; j < numTrainPoints; j++) {
-                    let id = i + "_" + j;
-                    let cell = document.getElementById(id);
-
-                    cell.addEventListener('click', function () {
-                        addPoint(i, j, type);
-                        predict(i, j);
-                    });
-                }
-            }
-        }
-
-        function predict(x, y) {
-            let minIndices = [];
-            let min = 9e+6;
-            console.log("predict studd");
-        }
-
         function createClickableSurface() {
-            let N = 100;
+
             let WIDTH = window.innerWidth;
             let HEIGHT = window.innerHeight
             let table = document.getElementById("space");
@@ -214,6 +98,156 @@
             }
         }
 
+        // Adda point to the list of points and update the distance matrix:
+        function addPoint(x, y, type) {
+            let p = {};
+            p.id = points.length;
+            p.x = x;
+            p.y = y;
+            p.type = type;
+            points.push(p);
+            pointClass.set(x + "_" + y, type);
+            numTrainPoints++;
+            updateDistMatrix(p);
+        }
+
+        // Compute the distance between two points:
+        function distAB(p1, p2) {
+            let dist = Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+            return dist;
+        }
+
+        // Update the distance matrix:
+        function updateDistMatrix(point) {
+            for (let i = 0; i < points.length - 1; i++) {
+                let d = distAB(points[i], point);
+                if (d > maxDist) {
+                    maxDist = d;
+                }
+                distMatrix[i][points.length - 1] = d;
+            }
+            displayDistMatrix();
+        }
+
+        // Mirror the distance matrix:
+        function mirrorDistMatrix() {
+            for (let i = 1; i < numTrainPoints; i++) {
+                for (let j = 0; j < i; j++) {
+                    distMatrix[i][j] = distMatrix[j][i];
+                }
+            }
+        }
+
+        // Converts a distance to a colour. Takes into account the maxximum
+        // distance in the distance matrix:
+        function dist2colour(number) {
+            number = (number / maxDist) * 100; // working with 0-99 will be easier
+            if (number == 0) {
+                return "rgb(255,255,255);"
+            } else {
+                let r = 0;
+                let g = 0;
+                if (number < 50) {
+                    // green to yellow
+                    r = Math.floor(255 * (number / 50));
+                    g = 255;
+
+                } else {
+                    // yellow to red
+                    r = 255;
+                    g = Math.floor(255 * ((50 - number % 50) / 50));
+                }
+                b = 0;
+
+                return "rgb(" + r + "," + g + "," + b + ")";
+            }
+
+        }
+
+        // Self-explanatory:
+        function displayDistMatrix() {
+            // Debug print of the distance matrix:
+            const CELL_WIDTH = 5;
+
+            let dm = document.getElementById("dmColourMap");
+            let table = document.createElement("TR");
+
+            dm.innerHTML = "";
+
+            for (let i = 0; i < numTrainPoints; i++) {
+                let row = document.createElement("TR");
+                for (let j = 0; j < numTrainPoints; j++) {
+                    let cell = document.createElement("TD");
+                    let div = document.createElement("div");
+                    div.setAttribute("id", "cm" + i + "_" + j);
+                    div.style.width = CELL_WIDTH;
+                    div.style.height = CELL_WIDTH;
+                    cell.style.backgroundColor = dist2colour(distMatrix[i][j]);
+                    cell.appendChild(div);
+                    row.appendChild(cell);
+                }
+                table.appendChild(row);
+            }
+            dm.appendChild(table);
+        }
+
+        // Takes care of some details before predicting:
+        function prepare4KNN() {
+            // Disable or hide inputs:
+            let kInput = document.getElementById("kValue");
+            document.getElementById("radioGroup").hidden = true;
+            k = kInput.value;
+            kInput.disabled = true;
+
+            // Mirror the distance matrix:
+            mirrorDistMatrix();
+            displayDistMatrix();
+
+            // Set an event lsitener to each cell to call predict():
+            for (let i = 0; i < N; i++) {
+                for (let j = 0; j < N; j++) {
+                    let id = i + "_" + j;
+                    let cell = document.getElementById(id);
+
+                    cell.addEventListener('mouseover', function () {
+                        predict(i, j, k);
+                    });
+                }
+            }
+
+            // Remove all the unused cell from the distance matrix:
+            distMatrix = distMatrix.slice(0, numTrainPoints);
+            distMatrix = distMatrix.map(row => row.slice(0, numTrainPoints));
+        }
+
+        function predict(x, y, kVal) {
+            
+            /*
+            -Calcula la distancia a cada punto O(N).
+            -Quedate con los k índices de las k distancias más pequeñas.
+            -Usa pointClass para ver el tipo de cada indice y estimar la
+            P(Y = j | X = x_o).
+            -Resultado: la clase con mayor ratio.
+            */
+            let dists = [];
+            let indxs = [];
+            let currPoint = {};
+            currPoint.x = x;
+            currPoint.y = y;
+            currPoint.type = "unknown";
+            for (let i = 0; i < numTrainPoints; i++) {
+                dists.push(distAB(points[i], currPoint));
+                indxs.push(i);
+
+            }
+            let min = Math.min(...dists);
+            let ind = dists.indexOf(min);
+            let cellid = x + "_" + y;
+            let col = COLOURS[points[ind].type];
+            let cell = document.getElementById(cellid);
+            cell.style.color = col;
+            cell.innerHTML = "\u2022";
+        }
     </script>
 </body>
 
